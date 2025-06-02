@@ -54,18 +54,6 @@ var (
 		Levels.Debug:  C.LOG_DEBUG,
 	}
 
-	// mirror of levelMap used to avoid making a new string with '[]' on every log
-	// call
-	levelMapFmt = map[Level][]byte{
-		Levels.Access: []byte("[Access] "),
-		Levels.Off:    []byte("[Off] "),
-		Levels.Panic:  []byte("[Panic] "),
-		Levels.Error:  []byte("[Error] "),
-		Levels.Warn:   []byte("[Warn] "),
-		Levels.Info:   []byte("[Info] "),
-		Levels.Debug:  []byte("[Debug] "),
-	}
-
 	customSock net.Conn = nil
 )
 
@@ -76,7 +64,7 @@ func SetCustomSocket(address, network string) (err error) {
 	return err
 }
 
-// SetLogName sets the indentifier used by syslog for this program
+// SetLogName sets the identifier used by syslog for this program
 func SetLogName(p string) (err error) {
 	if logName != nil {
 		C.free(unsafe.Pointer(logName))
@@ -123,12 +111,8 @@ func queueMsg(lvl Level, prefix, format string, v ...interface{}) (err error) {
 		return
 	}
 
-	// render the message: level prefix, message body, C null terminator
+	// render the message: prefix, message body, C null terminator
 	msg.level = levelSysLog[lvl]
-	if msg.Write(levelMapFmt[lvl]); err != nil {
-		atomic.AddUint64(&errCount, 1)
-		return
-	}
 	if fmt.Fprintf(msg, "%s", prefix); err != nil {
 		atomic.AddUint64(&errCount, 1)
 		return
